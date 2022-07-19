@@ -25,14 +25,11 @@ class Controller {
         }
 
         if(gettype($view) === "string") {
-            require_once $this->getView($view);             
+            require_once $this->getView($view);
         } else if(gettype($view) === "object" || gettype($view) === "array") {
             header("Content-Type:application/json");
             echo json_encode($view);
-        }        
-    }
-    private function chkLoginUrl() {
-
+        }
     }
     
     protected function addAttribute($key, $val) {

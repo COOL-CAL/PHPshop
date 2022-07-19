@@ -7,8 +7,14 @@
             $result = $this->model->signUp($json);
             if($result) {
                 $this->flash(_LOGINUSER, $result);
-                return [_RESULT => 1];
+                return [_RESULT => $result];
             }
-            return [_RESULT => 0];
+            return [_RESULT => $result];
+        }
+
+        public function logout() {
+            $this->flash(_LOGINUSER);
+            return [_RESULT => 1];
         }
     }
+    
