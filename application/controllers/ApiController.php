@@ -1,6 +1,8 @@
 <?php
     namespace application\controllers;
 
+    use Exception;
+
     class ApiController extends Controller {
         public function categoryList() {
             return $this->model->getCategoryList();
@@ -13,8 +15,26 @@
         }
 
         public function productList() {
-            $result = $this->model->productList();
-            return $result === false ? [] : $result;
+            $param = [];
+
+            if(isset($_GET["cate3"])) {
+                $cate3 = intval($_GET["cate3"]);
+                if($cate3 > 0) {
+                    $param["cate3"] = $cate3;
+                }
+            } else {
+                if(isset($_GET["cate1"])) {
+                    $param["cate1"] = $_GET["cate1"];
+                }
+                if(isset($_GET["cate2"])) {
+                    $param["cate2"] = $_GET["cate2"];
+                }
+            }                 
+            return $this->model->productList($param);         
+        }
+
+        public function productList2() {
+            return $this->model->productList2();
         }
 
         public function productDetail() {
@@ -68,21 +88,84 @@
             ];
             return $this->model->productImageList($param);
         }
-
+    
         public function productImageDelete() {
             $urlPaths = getUrlPaths();
-            if(!isset($urlPaths[5])) {
+            if(count($urlPaths) !== 6) {
                 exit();
             }
             $result = 0;
             switch(getMethod()) {
                 case _DELETE:
-                    unlink(_IMG_PATH . "/" . $urlPaths[2] . "/" . $urlPaths[3] . "/" . $urlPaths[4]);
-                    $param = ["product_image_id" => intval($urlPaths[5])];
-                    $result = $this->model->productImageDelete($param);
+                    //이미지 파일 삭제!
+                    $product_image_id = intval($urlPaths[2]);
+                    $product_id = intval($urlPaths[3]);
+                    $type = intval($urlPaths[4]);
+                    $path = $urlPaths[5];
+    
+                    $imgPath = _IMG_PATH . "/" . $product_id . "/" . $type . "/" . $path;
+                    if(unlink($imgPath)) {
+                        $param = [ "product_image_id" => $product_image_id ];
+                        $result = $this->model->productImageDelete($param);
+                    }
                     break;
-                    
             }
+    
             return [_RESULT => $result];
+        }
+    
+        public function deleteProduct() {
+            $urlPaths = getUrlPaths();
+            if(count($urlPaths) !== 3) {
+                exit();
+            }
+            $productId = intval($urlPaths[2]);
+            
+            
+            try {
+                $param = [
+                    "product_id" => $productId
+                ];
+                $this->model->beginTransaction();
+                $this->model->productImageDelete($param);
+                $result = $this->model->productDelete($param);
+                if($result === 1) {
+                    //이미지 삭제
+                    rmdirAll(_IMG_PATH . "/" . $productId);
+    
+                    $this->model->commit();
+                } else {
+                    $this->model->rollback();    
+                }
+            } catch(Exception $e) {            
+                $this->model->rollback();
+            }    
+            
+            return [_RESULT => 1];
+        }
+
+        public function cate1List() {
+            return $this->model->cate1List();
+        }
+
+        public function cate2List() {
+            $urlPaths = getUrlPaths();
+            if(count($urlPaths) !== 3) {
+                exit();
+            }        
+            $param = [ "cate1" => $urlPaths[2] ];
+            return $this->model->cate2List($param);
+        }
+    
+        public function cate3List() {
+            $urlPaths = getUrlPaths();
+            if(count($urlPaths) !== 4) {
+                exit();
+            }        
+            $param = [ 
+                "cate1" => $urlPaths[2], 
+                "cate2" => $urlPaths[3]
+            ];
+            return $this->model->cate3List($param);
         }
     }
